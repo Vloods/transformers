@@ -2892,11 +2892,21 @@ class GenerationMixin(ContinuousMixin):
                 if output_logits:
                     raw_logits += (next_token_logits,)
                 if output_attentions:
-                    decoder_attentions += (
-                        (outputs.decoder_attentions,) if self.config.is_encoder_decoder else (outputs.attentions,)
-                    )
                     if self.config.is_encoder_decoder:
-                        cross_attentions += (outputs.cross_attentions,)
+                        decoder_attentions += (tuple(att.to("cpu") for att in outputs.decoder_attentions),)
+                        cross_attentions   += (tuple(att.to("cpu") for att in outputs.cross_attentions),)
+                    else:
+                        # МАТЕРИАЛИЗУЕМ сразу на CPU — никаких генераторов:
+                        cpu_atts = tuple(att.to("cpu") for att in outputs.attentions)
+                        decoder_attentions += (cpu_atts,)   # или просто list.append(cpu_atts)
+                    # Чтоб не держать GPU ссылки внутри outputs:
+                    del outputs.attentions
+                    if hasattr(outputs, "decoder_attentions"):
+                        del outputs.decoder_attentions
+                    if hasattr(outputs, "cross_attentions"):
+                        del outputs.cross_attentions
+                    torch.cuda.synchronize()
+                    torch.cuda.empty_cache()
 
                 if output_hidden_states:
                     decoder_hidden_states += (
