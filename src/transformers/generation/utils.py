@@ -2896,7 +2896,7 @@ class GenerationMixin(ContinuousMixin):
                         decoder_attentions += (tuple(att.to("cpu") for att in outputs.decoder_attentions),)
                         cross_attentions   += (tuple(att.to("cpu") for att in outputs.cross_attentions),)
                     else:
-                        cpu_atts = tuple(att.to("cpu") for att in outputs.attentions)
+                        cpu_atts = outputs.attentions #tuple(att.to("cpu") for att in outputs.attentions)
                         decoder_attentions = (cpu_atts,)
                     del outputs.attentions
                     if hasattr(outputs, "decoder_attentions"):
@@ -2937,6 +2937,9 @@ class GenerationMixin(ContinuousMixin):
             # This is needed to properly delete outputs.logits which may be very large for first iteration
             # Otherwise a reference to outputs is kept which keeps the logits alive in the next iteration
             del outputs
+
+        cpu_atts = tuple(att.to("cpu") for att in decoder_attentions[0])
+        decoder_attentions = (cpu_atts, )
 
         if streamer is not None:
             streamer.end()
