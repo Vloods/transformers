@@ -2896,10 +2896,8 @@ class GenerationMixin(ContinuousMixin):
                         decoder_attentions += (tuple(att.to("cpu") for att in outputs.decoder_attentions),)
                         cross_attentions   += (tuple(att.to("cpu") for att in outputs.cross_attentions),)
                     else:
-                        # МАТЕРИАЛИЗУЕМ сразу на CPU — никаких генераторов:
                         cpu_atts = tuple(att.to("cpu") for att in outputs.attentions)
-                        decoder_attentions += (cpu_atts,)   # или просто list.append(cpu_atts)
-                    # Чтоб не держать GPU ссылки внутри outputs:
+                        decoder_attentions = (cpu_atts,)
                     del outputs.attentions
                     if hasattr(outputs, "decoder_attentions"):
                         del outputs.decoder_attentions
